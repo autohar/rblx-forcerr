@@ -1,75 +1,87 @@
-'use client';
-import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+"use client";
+import { useState } from "react";
+import { supabase } from "../supabaseClient";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+export default function HomePage() {
+  const [directory, setDirectory] = useState("");
+  const [webhook, setWebhook] = useState("");
+  const [status, setStatus] = useState("");
 
-export default function Home() {
-  const [directory, setDirectory] = useState('');
-  const [webhook, setWebhook] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const createSite = async () => {
-    if (!directory) return alert('Enter a directory name');
-    setLoading(true);
-
-    const { data, error } = await supabase
-      .from('websites')
-      .insert([{ directory, webhook_url: webhook }]);
-
-    if (error) {
-      alert('Error: ' + error.message);
-      setLoading(false);
+  const handleGenerate = async () => {
+    if (!directory || !webhook) {
+      setStatus("⚠️ Please enter both a directory and webhook URL");
       return;
     }
 
-    const siteUrl = `https://rblx-forcer.vercel.app/${directory}`;
+    setStatus("⏳ Creating your site...");
 
-    // Send a message to the user’s webhook
-    if (webhook) {
-      await fetch(webhook, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          embeds: [
-            {
-              title: '✅ Your site has been created!',
-              description: `Visit: [${siteUrl}](${siteUrl})`,
-              color: 0x00ff99,
-            },
-          ],
-        }),
-      });
+    // Check if directory already exists
+    const { data: existing } = await supabase
+      .from("websites")
+      .select("*")
+      .eq("directory", directory)
+      .single();
+
+    if (existing) {
+      setStatus("❌ Error — directory already exists!");
+      return;
     }
 
-    window.location.href = siteUrl;
+    // Insert new record
+    const { data, error } = await supabase
+      .from("websites")
+      .insert([{ directory, webhook_url: webhook }]);
+
+    if (error) {
+      setStatus("❌ Error: " + error.message);
+      return;
+    }
+
+    try {
+      // Send webhook message automatically
+      await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: `✅ Your site "${directory}" has been successfully created!\n🌐 Visit: https://rblx-forcer.vercel.app/${directory}`,
+        }),
+      });
+    } catch (err) {
+      console.error("⚠️ Webhook send failed", err);
+    }
+
+    setStatus("✅ Success! Redirecting...");
+    setTimeout(() => {
+      window.location.href = `/${directory}`;
+    }, 1500);
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
-      <h1 className="text-4xl font-bold mb-6">Create Your Custom RBLX Site</h1>
-      <input
-        className="p-3 mb-4 text-black rounded-md w-64"
-        placeholder="Enter directory name"
-        value={directory}
-        onChange={(e) => setDirectory(e.target.value)}
-      />
-      <input
-        className="p-3 mb-4 text-black rounded-md w-64"
-        placeholder="Optional Discord Webhook"
-        value={webhook}
-        onChange={(e) => setWebhook(e.target.value)}
-      />
-      <button
-        onClick={createSite}
-        disabled={loading}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-semibold"
-      >
-        {loading ? 'Creating...' : 'Create Site'}
-      </button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 text-white">
+      <h1 className="text-3xl font-bold mb-6">RBLX Generator</h1>
+
+      <div className="bg-white/10 p-6 rounded-2xl shadow-xl w-80 flex flex-col gap-3">
+        <input
+          value={directory}
+          onChange={(e) => setDirectory(e.target.value)}
+          placeholder="Enter directory name"
+          className="px-3 py-2 rounded bg-white/20 text-white placeholder-gray-300"
+        />
+        <input
+          value={webhook}
+          onChange={(e) => setWebhook(e.target.value)}
+          placeholder="Enter Discord Webhook URL"
+          className="px-3 py-2 rounded bg-white/20 text-white placeholder-gray-300"
+        />
+        <button
+          onClick={handleGenerate}
+          className="bg-white text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-200 transition"
+        >
+          Generate
+        </button>
+
+        {status && <p className="text-center mt-3">{status}</p>}
+      </div>
     </div>
   );
-}
+        }
