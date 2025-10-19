@@ -1,71 +1,101 @@
+"use client";
+import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_KEY
+  "https://YOUR-SUPABASE-URL.supabase.co", // 🔹 Replace with your Supabase URL
+  "YOUR-SUPABASE-ANON-KEY" // 🔹 Replace with your Supabase anon key
 );
 
-export default async function Page({ params }) {
+export default function Page({ params }) {
+  const router = useRouter();
   const { directory } = params;
+  const [name, setName] = useState("");
+  const [webhook, setWebhook] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  // Fetch the matching site info
-  const { data, error } = await supabase
-    .from("websites")
-    .select("*")
-    .eq("directory", directory)
-    .single();
+  const sendWebhookMessage = async (webhookUrl, content) => {
+    try {
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+    } catch (err) {
+      console.error("Webhook Error:", err);
+    }
+  };
 
-  if (error || !data) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
-        <h1 className="text-2xl font-bold">❌ Site Not Found</h1>
-        <p className="text-gray-400 mt-2">Please check your generated link.</p>
-      </div>
-    );
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
 
-  // Send Discord Webhook notification
-  if (data.webhook_url) {
-    await fetch(data.webhook_url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        embeds: [
-          {
-            title: "✅ Site Successfully Created!",
-            description: `Your site **${directory}** is now live!`,
-            color: 0x00ff99,
-            footer: {
-              text: "RBLX Generator",
-            },
-            fields: [
-              {
-                name: "🔗 Visit Site",
-                value: `https://${directory}.vercel.app`,
-              },
-            ],
-          },
-        ],
-      }),
-    });
-  }
+    const { error } = await supabase.from("users").insert([
+      { name, webhook, directory },
+    ]);
+
+    if (error) {
+      console.error(error);
+      setMessage("❌ Error creating your entry. Please try again.");
+      setLoading(false);
+    } else {
+      await sendWebhookMessage(
+        webhook,
+        `✅ Successfully created site for: **${name}** under directory **${directory}**`
+      );
+
+      setMessage("✅ Success! Redirecting...");
+      setTimeout(() => {
+        router.push(`https://${directory}.vercel.app`);
+      }, 2000);
+    }
+  };
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-500 to-purple-700 text-white">
-      <div className="bg-white/10 p-10 rounded-2xl shadow-lg text-center">
-        <h1 className="text-4xl font-extrabold mb-4">
-          🎉 Welcome to {directory}!
+    <div className="min-h-screen bg-gradient-to-br from-purple-700 to-indigo-900 flex items-center justify-center p-4">
+      <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+        <h1 className="text-3xl font-bold text-white mb-4">
+          Create Your Site
         </h1>
-        <p className="text-lg mb-6 text-gray-200">
-          Your generated page is now live and your webhook has been notified.
+        <p className="text-gray-300 mb-6">
+          Directory: <span className="font-semibold text-purple-300">{directory}</span>
         </p>
-        <a
-          href="/"
-          className="bg-white text-indigo-700 px-5 py-2 rounded-xl font-semibold hover:bg-indigo-200 transition"
-        >
-          🔙 Go Back Home
-        </a>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Enter Your Name"
+            className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+
+          <input
+            type="url"
+            placeholder="Enter Your Discord Webhook URL"
+            className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none"
+            value={webhook}
+            onChange={(e) => setWebhook(e.target.value)}
+            required
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full p-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition"
+          >
+            {loading ? "Creating..." : "Create Site"}
+          </button>
+        </form>
+
+        {message && (
+          <p className="mt-4 text-white font-medium">{message}</p>
+        )}
       </div>
-    </main>
+    </div>
   );
-}
+    }
