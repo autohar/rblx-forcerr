@@ -4,8 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 
 const supabase = createClient(
-  "https://YOUR-SUPABASE-URL.supabase.co", // 🔹 Replace with your Supabase URL
-  "YOUR-SUPABASE-ANON-KEY" // 🔹 Replace with your Supabase anon key
+  "https://ramnfuimgktyyulpjeqh.supabase.co", // 🔹 Replace with your Supabase URL
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhbW5mdWltZ2t0eXl1bHBqZXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NjgyMDMsImV4cCI6MjA3NTA0NDIwM30.b_iBCqGzNCuKtfgbMZLK8rAI6eK6q9q-CIOWmMPAW60" // 🔹 Replace with your Supabase anon key
 );
 
 export default function Page({ params }) {
