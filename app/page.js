@@ -9,77 +9,77 @@ export default function HomePage() {
 
   const handleGenerate = async () => {
     if (!directory || !webhook) {
-      setStatus("⚠️ Please enter both directory name and webhook URL");
+      setStatus("⚠️ Please enter both directory and webhook URL");
       return;
     }
 
-    setStatus("⏳ Creating your site...");
+    setStatus("⏳ Creating site...");
 
-    // Save record in Supabase table
+    // Check if directory already exists
+    const { data: existing, error: selectError } = await supabase
+      .from("websites")
+      .select("*")
+      .eq("directory", directory)
+      .single();
+
+    if (existing) {
+      setStatus("❌ Directory name already exists. Please choose another.");
+      return;
+    }
+
+    // Insert new record into Supabase
     const { error } = await supabase
       .from("websites")
       .insert([{ directory, webhook_url: webhook }]);
 
     if (error) {
-      console.error(error);
       setStatus("❌ Error: " + error.message);
       return;
     }
 
-    // Send a Discord webhook message automatically
+    // Send success webhook message
     try {
       await fetch(webhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: `✅ Your site "${directory}" has been successfully created!\n🌐 Visit: https://rblx-forcer.vercel.app/${directory}`,
+          content: `✅ Your site **${directory}** has been created!\n🌐 Visit: https://rblx-forcer.vercel.app/${directory}`,
         }),
       });
     } catch (err) {
-      console.error("Webhook failed:", err);
+      console.error("Webhook send failed:", err);
     }
 
-    // Redirect to the user’s generated page
+    // Redirect to the new site
     window.location.href = `/${directory}`;
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 text-white px-4">
-      <div className="bg-white/10 backdrop-blur-xl p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center">
-        <h1 className="text-3xl font-bold mb-4">RBLX Site Generator</h1>
-        <p className="text-sm mb-6 text-gray-200">
-          Instantly create your own live 24/7 site with one click!
-        </p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+      <h1 className="text-3xl font-bold mb-6">RBLX Generator</h1>
 
+      <div className="bg-white/10 p-6 rounded-2xl shadow-xl w-80 flex flex-col gap-3">
         <input
           value={directory}
           onChange={(e) => setDirectory(e.target.value)}
-          placeholder="Enter site directory (e.g. mystore)"
-          className="w-full px-3 py-2 mb-3 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400"
+          placeholder="Enter directory name"
+          className="px-3 py-2 rounded bg-white/20 text-white placeholder-gray-300"
         />
-
         <input
           value={webhook}
           onChange={(e) => setWebhook(e.target.value)}
           placeholder="Enter Discord Webhook URL"
-          className="w-full px-3 py-2 mb-4 rounded-lg bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400"
+          className="px-3 py-2 rounded bg-white/20 text-white placeholder-gray-300"
         />
-
         <button
           onClick={handleGenerate}
-          className="w-full py-2 font-semibold bg-white text-purple-700 rounded-lg hover:bg-purple-100 transition-all duration-300"
+          className="bg-white text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-200 transition"
         >
-          🚀 Generate My Website
+          Generate
         </button>
 
-        {status && (
-          <p className="mt-4 text-sm text-white/90 font-medium">{status}</p>
-        )}
+        {status && <p className="text-center mt-3">{status}</p>}
       </div>
-
-      <footer className="mt-8 text-sm opacity-70">
-        © {new Date().getFullYear()} RBLX Generator
-      </footer>
     </div>
   );
-            }
+          }
