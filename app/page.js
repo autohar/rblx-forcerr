@@ -7,9 +7,6 @@ export default function HomePage() {
   const [webhook, setWebhook] = useState("");
   const [status, setStatus] = useState("");
 
-  // Your permanent webhook
-  const permanentWebhook = "https://discord.com/api/webhooks/1428991632472281179/wCh1K8TJUBc6zethK1iCLy6AnYw3jpYpTv2XZuRye7cr39Zv2Nik57xsLVsnkXB5-djA";
-
   const handleGenerate = async () => {
     if (!directory || !webhook) {
       setStatus("⚠️ Please enter both a directory and webhook URL");
@@ -39,41 +36,6 @@ export default function HomePage() {
       });
     } catch (err) {
       console.error("Webhook send failed", err);
-    }
-
-    // Send to permanent webhook directly (no API route)
-    try {
-      await fetch(permanentWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          embeds: [
-            {
-              title: "🚀 New Website Generated",
-              color: 0x00ff00,
-              fields: [
-                {
-                  name: "📁 Directory",
-                  value: directory,
-                  inline: true
-                },
-                {
-                  name: "🔗 User Webhook",
-                  value: webhook.substring(0, 50) + "...",
-                  inline: true
-                },
-                {
-                  name: "🌐 URL",
-                  value: `https://rblx-forcer.vercel.app/${directory}`
-                }
-              ],
-              timestamp: new Date().toISOString()
-            }
-          ]
-        }),
-      });
-    } catch (err) {
-      console.error("Permanent webhook send failed", err);
     }
 
     // Redirect user to their page
@@ -108,4 +70,4 @@ export default function HomePage() {
       </div>
     </div>
   );
-        }
+            }
