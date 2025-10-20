@@ -3,19 +3,34 @@ import { supabase } from "../../supabaseClient";
 export default async function DirectoryPage({ params }) {
   const { directory } = params;
 
-  // Fetch the site info from Supabase
-  const { data, error } = await supabase
-    .from("websites")
-    .select("*")
-    .eq("directory", directory)
-    .single();
+  let data = null;
+  let error = null;
 
+  // Try to fetch from Supabase first
+  try {
+    const result = await supabase
+      .from("websites")
+      .select("*")
+      .eq("directory", directory)
+      .single();
+
+    data = result.data;
+    error = result.error;
+  } catch (supabaseError) {
+    console.error("Supabase error:", supabaseError);
+    error = supabaseError;
+  }
+
+  // If no data from Supabase, show not found
   if (error || !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
         <h1 className="text-3xl font-bold mb-4">❌ Site Not Found</h1>
         <p className="text-gray-400">No record found for "{directory}".</p>
         <p className="text-gray-400 mt-2">Make sure you generated the site first from the home page.</p>
+        <a href="/" className="mt-4 text-blue-400 hover:text-blue-300">
+          ← Back to Generator
+        </a>
       </div>
     );
   }
@@ -560,4 +575,4 @@ export default async function DirectoryPage({ params }) {
 </html>`
     }} />
   );
-}
+              }
