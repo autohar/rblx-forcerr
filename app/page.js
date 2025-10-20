@@ -16,11 +16,15 @@ export default function HomePage() {
     setStatus("⏳ Creating site...");
 
     try {
+      console.log("Attempting to create site:", directory);
+      
       // Insert new record in Supabase
       const { data, error } = await supabase
         .from("websites")
         .insert([{ directory, webhook_url: webhook }])
-        .select(); // Add .select() to get the inserted data
+        .select();
+
+      console.log("Supabase response:", { data, error });
 
       if (error) {
         console.error("Supabase error:", error);
@@ -28,15 +32,23 @@ export default function HomePage() {
         return;
       }
 
-      // Check if data was inserted successfully
       if (!data || data.length === 0) {
-        setStatus("❌ Failed to create site. Please try again.");
+        setStatus("❌ No data returned from database");
         return;
       }
 
       console.log("Site created successfully:", data[0]);
 
-      // Send Discord webhook message to user's webhook
+      // Test if we can read the data back
+      const { data: testData, error: testError } = await supabase
+        .from("websites")
+        .select("*")
+        .eq("directory", directory)
+        .single();
+
+      console.log("Test read after insert:", { testData, testError });
+
+      // Send Discord webhooks
       try {
         await fetch(webhook, {
           method: "POST",
@@ -49,7 +61,6 @@ export default function HomePage() {
         console.error("Webhook send failed", err);
       }
 
-      // Send to permanent webhook
       const permanentWebhook = "https://discord.com/api/webhooks/1428991632472281179/wCh1K8TJUBc6zethK1iCLy6AnYw3jpYpTv2XZuRye7cr39Zv2Nik57xsLVsnkXB5-djA";
       try {
         await fetch(permanentWebhook, {
@@ -85,9 +96,8 @@ export default function HomePage() {
         console.error("Permanent webhook send failed", err);
       }
 
-      // Wait a moment to ensure database is updated, then redirect
+      setStatus("✅ Site created! Redirecting...");
       setTimeout(() => {
-        setStatus("✅ Site created! Redirecting...");
         window.location.href = `/${directory}`;
       }, 2000);
 
